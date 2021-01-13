@@ -1,6 +1,5 @@
 require 'sqlite3'
 require 'singleton'
-require 'byebug'
 
 # plays Schema: id, title, year, playwright_id
 # playwrights Schema: id, name, birth_year
@@ -27,7 +26,6 @@ class Play
       WHERE
         title = ?;
     SQL
-    #debugger
     Play.new(data[0]);
   end
 
