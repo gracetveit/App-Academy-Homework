@@ -2,6 +2,9 @@ require 'sqlite3'
 require 'singleton'
 require 'byebug'
 
+# plays Schema: id, title, year, playwright_id
+# playwrights Schema: id, name, birth_year
+
 class PlayDBConnection < SQLite3::Database
   include Singleton
 
@@ -78,5 +81,20 @@ class Play
       WHERE
         id = ?
     SQL
+  end
+end
+
+class Playwright
+  attr_accessor :id, :name, :birth_year
+
+  def self.all
+    data = PlayDBConnection.instance.execute("SELECT * FROM playwrights")
+    data.map { |datum| Playwright.new(datum) }
+  end
+
+  def initialize(options)
+    @id = options['id']
+    @name = options['name']
+    @birth_year = options['birth_year']
   end
 end
