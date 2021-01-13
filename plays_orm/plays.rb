@@ -1,5 +1,6 @@
 require 'sqlite3'
 require 'singleton'
+require 'byebug'
 
 class PlayDBConnection < SQLite3::Database
   include Singleton
@@ -14,8 +15,23 @@ end
 class Play
   attr_accessor :id, :title, :year, :playwright_id
 
+  def self.find_by_title(title)
+    data = PlayDBConnection.instance.execute(<<-SQL, title)
+      SELECT
+        *
+      FROM
+        plays
+      WHERE
+        title = ?;
+    SQL
+    #debugger
+    Play.new(data[0]);
+  end
+  
+
   def self.all
     data = PlayDBConnection.instance.execute("SELECT * FROM plays")
+    # debugger
     data.map { |datum| Play.new(datum) }
   end
 
