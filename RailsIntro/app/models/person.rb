@@ -10,6 +10,12 @@
 #
 
 class Person < ApplicationRecord
-    validates :name, precense: true
-    validates :house_id, precense: true
+    validates :name, presence: true
+    validates :house_id, presence: true
+
+    belongs_to(:house, {
+        primary_key: :id,
+        foreign_key: :house_id,
+        class_name: :House
+    })
 end
