@@ -2,4 +2,8 @@
 <% @cats.each do |cat| %>
     <li><a href=<%= cat_url(cat) %>><%= cat.name %></a></li>
 <% end %>
+
+<% content_for :footer do %>
+    <p>This is the cats index page.</p>
+<% end %>
 </ul>
