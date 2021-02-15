@@ -5,6 +5,7 @@
 <% end %>
 
 <form action="<%= action_url %>" method="POST">
+    <%= auth_token %>
     <label for="username">Username</label>
     <input type="text" name="users[user_name]">
 
