@@ -1,51 +1,65 @@
 class CatsController < ApplicationController
-  # Allow unlogged in users to browse cats.
-  before_action :require_user!, only: %i(new create edit update)
+    before_action :is_owner, only: [:edit, :update]
 
-  def index
-    @cats = Cat.all
-    render :index
-  end
-
-  def show
-    @cat = Cat.find(params[:id])
-    render :show
-  end
-
-  def new
-    @cat = Cat.new
-    render :new
-  end
-
-  def create
-    @cat = current_user.cats.new(cat_params)
-    if @cat.save
-      redirect_to cat_url(@cat)
-    else
-      flash.now[:errors] = @cat.errors.full_messages
-      render :new
+    def index
+        @cats = Cat.all
+        render :index
     end
-  end
 
-  def edit
-    @cat = current_user.cats.find(params[:id])
-    render :edit
-  end
-
-  def update
-    @cat = current_user.cats.find(params[:id])
-    if @cat.update_attributes(cat_params)
-      redirect_to cat_url(@cat)
-    else
-      flash.now[:errors] = @cat.errors.full_messages
-      render :edit
+    def show
+        @cat = Cat.find_by id: params[:id]
+        render :show
     end
-  end
 
-  private
+    def new
+        @cat = Cat.new
+        render :new
+    end
 
-  def cat_params
-    params.require(:cat)
-      .permit(:birth_date, :color, :description, :name, :sex)
-  end
+    def create
+        @cat = Cat.new(cat_params)
+        @cat.user_id = current_user.id
+
+        if @cat.save
+            redirect_to cat_url(@cat)
+        else
+            render :new
+            puts @cat.errors.full_messages
+        end
+    end
+
+    def edit
+        @cat = Cat.find_by id: params[:id]
+        render :edit
+    end
+
+    def update
+        @cat = Cat.find_by id: params[:id]
+
+        if @cat.update(cat_params)
+            redirect_to cat_url(@cat)
+        else
+            render :edit
+            puts @cat.errors.full_messages
+        end
+    end
+
+    private
+
+    def cat_params
+        params.require(:cats).permit(
+            :birth_date,
+            :color,
+            :name,
+            :sex,
+            :description
+        )
+    end
+
+    def is_owner
+        cat = Cat.find_by(id: params[:id])
+        unless current_user == cat.owner
+            redirect_to cats_url
+        end
+    end
 end

@@ -1,34 +1,26 @@
 class ApplicationController < ActionController::Base
-  protect_from_forgery with: :exception
+    helper_method :login!, :current_user
 
-  # Expose current_user method to the views
-  helper_method :current_user
-  helper_method :logged_in?
+    def login!(user)
+        @user = user
+        session[:session_token] = user.session_token
+    end
 
-  private
-  def require_no_user!
-    redirect_to cats_url if current_user
-  end
+    def current_user
+        return nil if session[:session_token].nil?
+        @user ||= User.find_by(session_token: session[:session_token])
+    end
 
-  def current_user
-    return nil unless session[:session_token]
-    @current_user ||= User.find_by(session_token: session[:session_token])
-  end
+    def already_logged_in
+        unless !current_user
+            redirect_to cats_url
+        end
+    end
 
-  def logged_in?
-    !current_user.nil?
-  end
-
-  def login_user!(user)
-    session[:session_token] = user.reset_session_token!
-  end
-
-  def logout_user!
-    current_user.reset_session_token!
-    session[:session_token] = nil
-  end
-
-  def require_user!
-    redirect_to new_session_url if current_user.nil?
-  end
+    def is_owner
+        cat = Cat.find_by(id: params[:id])
+        unless current_user == cat.owner
+            redirect_to cats_url
+        end
+    end
 end

@@ -1,35 +1,56 @@
-require 'action_view'
+# == Schema Information
+#
+# Table name: cats
+#
+#  id          :integer(8)      not null, primary key
+#  birth_date  :date            not null
+#  color       :string          not null
+#  name        :string          not null
+#  sex         :string(1)       not null
+#  description :text            not null
+#  created_at  :datetime        not null
+#  updated_at  :datetime        not null
+#  user_id     :integer(4)      not null
+#
 
 class Cat < ApplicationRecord
-  include ActionView::Helpers::DateHelper
-  # freeze ensures that constants are immutable
-  CAT_COLORS = %w(black white orange brown).freeze
+    validates :birth_date, presence: true
+    validates :color, presence: true
+    validates :color, inclusion: {
+        in: [
+            "Tabby",
+            "Calico",
+            "Black",
+            "White"
+        ], 
+        message: "%{value} is not a valid color"
+    }
+    validates :name, presence: true
+    validates :sex, presence: true
+    validates :sex, inclusion: {
+        in: %w(M F),
+        message: "%{value} is not a valid sex"
+    }
+    validates :description, presence: true
+    validates :user_id, presence: true
+    
+    has_many :rental_requests,
+        dependent: :destroy,
+        primary_key: :id,
+        foreign_key: :cat_id,
+        class_name: :CatRentalRequest
 
-  # N.B. Remember, Rails 5 automatically validates the presence of
-  # belongs_to associations, so we can leave the validation of owner out
-  # here.
-  validates :birth_date, :color, :name, :sex, :owner, presence: true
-  validates :color, inclusion: CAT_COLORS, unless: -> { color.blank? }
-  validates :sex, inclusion: %w(M F), if: -> { sex }
-  validate :birth_date_in_the_past, if: -> { birth_date }
+    belongs_to :owner,
+        primary_key: :id,
+        foreign_key: :user_id,
+        class_name: :User
 
-  has_many :rental_requests,
-    class_name: :CatRentalRequest,
-    dependent: :destroy
+    has_many :requesting_users,
+        through: :rental_requests,
+        source: :user
 
-  belongs_to :owner,
-    class_name: 'User',
-    foreign_key: :user_id
-
-  def age
-    time_ago_in_words(birth_date)
-  end
-
-  private
-
-  def birth_date_in_the_past
-    if birth_date && birth_date > Time.now
-      errors[:birth_date] << 'must be in the past'
+    def age
+        age = Date.today - self.birth_date
+        age.round / 365
     end
-  end
 end

@@ -1,98 +1,174 @@
-# Helpers, Layouts, and Partials Homework
+# 99cats
 
-We will be working off of the solutions for _99 Cats II: Auth_ for today's homework assignment. Download the [zipped solution](https://assets.aaonline.io/fullstack/rails/projects/ninety_nine_cats_ii/solution.zip?raw=true), extract, `bundle install` and `bundle exec rails db:setup` to set it up.
+This project asks you to clone the (now defunct) dress rental website 99dresses. We'll make it cat oriented.
 
-## Topic 1: View Helpers
+**[Live Demo!](https://ninetyninecats.herokuapp.com/)**
 
-Isn't it pesky to have to rewrite the code for the `form_authenticity_token` field over and over? Let's abstract it into a simple helper method that we can use across our views.
+## Learning Goals
 
-Open up your `helpers/application_helper.rb` file and write a new method called `auth_token`. As a refresher, your auth token code in your views should look something like this:
+-   Be able to build a model with validations and default values
+-   Know how to build Rails views for new and edit forms
+    -   Know how to use a hidden field to set the form's method
+    -   Be able to separate the form out into a partial that both forms use
+    -   Be able to show data and actions based on the form's type
+    -   Know how to use `select` and `input` HTML elements
+-   Be able to add methods to a Rails model
 
-```erb
-<input
-  type="hidden"
-  name="authenticity_token"
-  value="<%= form_authenticity_token %>"
-/>
-```
+First, follow the setup instructions in [Rails setup](https://open.appacademy.io/learn/full-stack-online/rails/rails-setup)!
 
-Let's put this code in our new `auth_token` method, but with a few changes. First of all, we'll need to wrap the input tag in a string and call `#html_safe` on it. Otherwise, our `auth_token` method will output the string literal for our input tag. Secondly, now that our input tag is little more than a string in Ruby-land, we shouldn't interpolate the actual `form_authenticity_token` using erb tags. Instead, just interpolate `form_authenticity_token` using the string interpolation syntax we know and love (`#{}`).
+We won't worry about CSRF attacks today (you're not supposed to know what that is yet!). Take a walk on the wild side by adding the line `config.action_controller.default_protect_from_forgery = false` right underneath the line `config.load_defaults 5.2` in `config/application.rb`.
 
-Sweet! Looking good? Now go through your app and replace all of the `form_authenticity_token` input fields with calls to your snazzy new method, `<%= auth_token %>`, to dry up your code and simplify your life.
+## Phase I: Cat
 
-## Topic 2: Layouts
+### Model
 
-We've been using layouts in Rails every day without even knowing it! Let's check out our `application.html.erb` file. In particular, notice the `<%= yield %>` tag in the middle of the layout. This will yield in the content for whatever page we're on, whether that's the cats index or new user form.
+Build a `Cat` migration and model. Attributes should include:
 
-Now, let's say we want to add a footer on our `application.html.erb` layout. We want our footer to display a paragraph describing our site on every page of our site. In addition, we want it to display a line describing the particular page we are on. This is a perfect time to use Rails's `content_for` method.
+-   `birth_date`
+    
+    -   Use the `date` column type. This lets you take advantage of ActiveRecord magic that deserializes string input into a Ruby `Date` object. eg:
+        
+        ```ruby
+        kitty = Cat.new(birth_date: '2015/01/20')
+        kitty.birth_date #=> #<Date: 2015-01-20>
+        ```
+        
+        Note: Naming your instance of a `Cat` as `cat` (eg. `cat = Cat.new(birth_date: '2015/01/20')` will give you an error in pry because `cat` is a reserved word.
+        
+    -   Write an `#age` method that uses `birth_date` to calculate age. You will find some useful methods for this in the [Ruby `Date` docs](http://ruby-doc.org/stdlib-2.1.2/libdoc/date/rdoc/Date.html). Also be sure to check out the [Rails docs](http://api.rubyonrails.org/classes/ActionView/Helpers/DateHelper.html#method-i-time_ago_in_words). (Hint: ActionView DateHelpers is a `module` that needs to be `included` in the Cat model class if you want access to these methods. To do this, require `action_view` in your `cat.rb` file, then add `ActionView::Helpers::DateHelper` to your `Cat` class)
+        
+-   `color`
+    
+    -   We'll require the user to choose from a standard set of colors, so add an `:inclusion` validation to the model. We'll need to access the colors again in the views, so store them in a constant.
+    -   Don't worry about creating a DB constraint for inclusion. Normally that's overkill.
+-   `name`
+-   `sex`
+    -   Represent as a one-character string. Use the [`:limit`](https://api.rubyonrails.org/classes/ActiveRecord/ConnectionAdapters/SchemaStatements.html#method-i-add_column) option in your migration to make a string column of length 1.
+    -   Add an inclusion validation so that sex is `"M"` or `"F"`.
+-   `description`
+    -   Use a `text` column to store arbitrarily long text describing fond memories the user has of their time with the `Cat`.
+-   Timestamps
+-   Add database-level NOT NULL constraints and model-level presence [validations](https://open.appacademy.io/learn/full-stack-online/rails/displaying-validation-errors--flash).
 
-First, create a footer section in your `application.html.erb` at the end of the `body` tag, and write in a paragraph describing your site. Verify that this shows up on every page as you navigate around in localhost.
+### Index/Show Pages
 
-Next, let's add a second yield tag to insert the custom footer content within the new footer section. It should look something like this:
+-   Add a cats resource to your routes and create a `CatsController`
+-   Build an `index` page of all `Cat`s.
+    -   Keep it simple; list the cats and link to the show pages.
+-   Build a `show` page for a single cat.
+    -   Keep it simple; just show the cat's attributes.
+    -   Learn how to use a [table](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/table) (`table`, `tr`, `td`, `th` tags) to format the cat's vital information.
 
-```erb
-<footer>
-  This is our 99 Cats site. Please feel free to browse!
+### New Form
 
-  <%= yield :footer %>
-</footer>
-```
+Build a `new` form page to create a new `Cat`:
 
-Now, time to add some page specific content. Go through each of your views, and add a line specific to that page. It should look something like this:
+-   Use text for name.
+-   Use radio buttons for sex.
+-   Use a dropdown for color (hint: keep your code DRY by using the constant you defined on the `Cat` class.
+-   Use a blank `<option>` as the default color. You may want to add the text '-- select a color --' (or similar) so users know what this dropdown is for. This will force the user to consciously pick one.
+-   You can use the `date` input type to prompt the user to pick a birth date. Look this up on MDN.
+-   Use a `textarea` tag for the description.
 
-```erb
-<p>Other content for the cats index goes here</p>
+### Edit Form
 
-<% content_for :footer do %>
-  <p>This is the cats index page.</p>
-<% end %>
-```
+-   Copy your new form to an edit view.
+-   You'll want to make a PATCH request, but for historical reasons `<form>` won't let you specify a `method` of PATCH.
+    -   The Rails solution is to upload a special parameter named `_method` with the value set to the HTTP method you want.
+    -   Use a hidden field to do this.
+    -   We say that you are "emulating" a PATCH request this way.
+-   Prefill the form with the `Cat`'s current details.
+    -   You'll use the `value` attribute a lot. You may also use the `checked` (for `radio`, `checkbox`) and `selected` (for `option`) attributes.
+    -   You can look up `input` and `option` attributes on MDN. It will explain `checked` and `selected`.
+    -   Note that `textarea` is not a self-closing tag. The value is the body of the tag.
 
-Finished? Navigate around your site in localhost. Make sure that the main body of each page appears in the main `yield` section of the layout, and that your footer-specific content appears in the footer.
+### Unify!
 
-## Topic 3: Action Mailer
+-   Your edit view duplicates your new view. Let's unify the two.
+-   Copy your edit view to a partial named `_form`.
+-   Make sure you are passing `@cat` into your partial as a local variable like so: `<%= render 'form', cat: @cat %>`
+    -   We do not want to use instance variables in our partials because it promotes **coupling** between our partial and the controllers that render it. By passing in the instance variable as a local variable, we keep our code DRY and prevent bugs should we ever decide to refactor.
+    -   It also gives us the flexibility to pass different variables depending on the context (for example, using `@cats[idx]` if we were to use this partial in the index view.)
+-   Change your edit view to render the partial, passing in a local named `cat`. Everything should still work.
+-   Our goal is to reuse the form for the new form too.
+-   To do this, we need to get three things right:
+    -   The edit form tries to use a `Cat`'s values to pre-fill the fields. The new form doesn't have an existing cat, though.
+    -   The edit form posts to `cat_url(cat)`; we want to post to `cats_url` if we're making a new cat.
+    -   The edit form makes a PATCH request; we want to make a POST request.
+-   To solve this, build (but don't save) a blank `Cat` object in the `#new` action. Set this to `@cat`.
+    -   All the pre-filling should get the blank values.
+    -   Use `#persisted?` to conditionally use `cat_url(cat)`/PATCH only if the `Cat` has been previously saved to the DB.
 
-1.  Create a user mailer to welcome new users to your account. The `bundle exec rails generate mailer UserMailer` command will create a new mailer class file with some default code in `app/mailers/user_mailer.rb`.
+## Phase II: CatRentalRequest
 
-```ruby
-class UserMailer < ApplicationMailer
-  default from: 'from@example.com'
-end
-```
+### Build Out The Model
 
-2.  Implement a `#welcome_email` method that will e-mail a user from `everybody@appacademy.io`.
+-   Make a `CatRentalRequest` migration and model. Attributes should include:
+    -   `cat_id` (integer)
+    -   `start_date` (date)
+    -   `end_date` (date)
+    -   `status` (string) will start out as `'PENDING'`, but can be switched to `'APPROVED'` or `'DENIED'`. In your migration, set the default to `'PENDING'`.
+-   Add an inclusion validation on `status`.
+-   Add NOT NULL constraints and presence [validations](https://open.appacademy.io/learn/full-stack-online/rails/displaying-validation-errors--flash).
+-   Add an index on `cat_id`, since it is a foreign key.
+-   Add associations between `CatRentalRequest` and `Cat`.
+-   Make sure that when a `Cat` is deleted, all of its rental requests are also deleted. Use `dependent: :destroy`.
 
-Need a hint? Refer back to the [mailer readings](https://open.appacademy.io/learn/full-stack-online/rails/actionmailer).
+### Custom Validation
 
-```ruby
-class UserMailer < ApplicationMailer
-  default from: 'from@example.com'
+`CatRentalRequest`s should not be valid if they overlap with an approved `CatRentalRequest` for the same cat. A single cat can't be rented out to two people at once! We will write a custom validation for this.
 
-  def welcome_email(user)
-    # your code here
-  end
-end
-```
+-   First, write a method `#overlapping_requests` to get all the `CatRentalRequest`s that overlap with the one we are trying to validate.
+    
+    -   Be sure to use ActiveRecord to do this. It may be tempting to just get `CatRentalRequests.all` and then do all the filtering in Ruby, but this would be wasteful. We don't want to create objects we don't need. Our database is really good at solving this kind of problem, so let's use it!
+    -   The method should return an ActiveRecord::Relation so we can continue chaining more methods onto it later.
+    -   The `CatRentalRequest` we are trying to validate should not appear in the list of `#overlapping_requests`
+    -   The method returns the requests for the current cat.
+    -   The method should work for both saved and unsaved `CatRentalRequests`
+    -   Consider the following cases:
+        -   A cat rental request starting on 02/25/17 and ending on 02/27/17.
+        -   There is a overlap if another cat rental also starts on the same day (02/25/17).
+        -   There is a overlap if another cat rental request starts on the return day (02/27/17).
+        -   There is a overlap if another cat rental request starts between the start and end dates (02/26/17).
+    -   Hint: Consider the case(s) where requests would _NOT_ overlap and then code the negation.
+        
+    -   Beware of [SQL ternary logic](https://open.appacademy.io/learn/full-stack-online/rails/ternary-logic-in-sql).
+        
+-   Next, write a method `#overlapping_approved_requests`. You should be able to use your `#overlapping_requests` method.
+    
+-   Now we can write our custom validation, `#does_not_overlap_approved_request`. All we need to do is call `#overlapping_approved_requests` and check whether any [`#exists?`](http://apidock.com/rails/ActiveRecord/FinderMethods/exists%3F).
 
-3.  Next, write the content for the e-mail welcoming the user to the site. Create a `welcome_email.html.erb` file in `app/views/user_mailer/` and fill it in.
+### Build The Controller & New View
 
-In addition to the `.html.erb` file, make a text-only version in `welcome_email.txt.erb`. Remember - omitting a text version of your email could make many filters interpret your email as spam!
+-   Create a controller; setup a resource in your routes file.
+-   Add a `new` request form to file requests.
+-   Use a dropdown to select the `Cat` desired. Your rental request form should upload a cat id.
+-   Use the `date` input type so the user may select start/end dates for the request.
+-   Add a `create` action, of course.
+-   Edit the cat show page to show existing requests
+    -   Just show the start, end dates.
+    -   Use `order` to sort them by `start_date`
 
-4.  When a user signs up for your app, send them the welcome e-mail. Where should that code live within our existing `UsersController`? Implement the code.
+## Phase III: Approving/Denying Requests
 
-Remember - we need a few things. We must call our new `welcome_email` method, which returns a message, and call `deliver_now` on that message to actually send it:
+### Write `approve!` And `deny!` Methods
 
-```ruby
-msg = UserMailer.welcome_email(@user)
-msg.deliver_now
-```
+By the end of Phase III, any user can approve or deny a `Cat`'s `CatRentalRequest`.
 
-5.  Test it out! Set up the `letter_opener` gem so that you can try out your code on `localhost:3000`. The sent message should pop up in the browser if all went according to plan. Congrats! You've ActionMailed!
+Currently, all `CatRentalRequest` statuses are set to `'PENDING'`. When approving a `CatRentalRequest` (changing the cat rental request's status to `'APPROVED'`), all other conflicting `CatRentalRequest` statuses will be denied (changing the cat rental request's status to `'DENIED'`).
 
-```ruby
-# Gemfile
-gem 'letter_opener', group: :development
+-   Add a helper method `#overlapping_pending_requests`. You should be able to use your `#overlapping_requests` method.
+-   Add a method `#approve!` to the rental request model. When calling the `#approve!` on an instance of `CatRentalRequest`:
+    -   Change the current instance's status from `'PENDING'` to `'APPROVED'`.
+    -   Save the instance into the database.
+    -   Deny all conflicting rental requests by calling on `'overlapping_pending_requests'` by changing their statuses to `'DENIED'`.
+-   All the work of `#approve!` should occur in a single **[transaction](http://api.rubyonrails.org/v3.2.16/classes/ActiveRecord/Transactions/ClassMethods.html)**.
+-   Most of the time, when you want to make several related updates to the DB, you want to do them grouped in a transaction.
+-   Write a `#deny!` method; this one is easier!
 
-# config/environments/development.rb
-config.action_mailer.delivery_method = :letter_opener
-```
+### Add Buttons
+
+-   On the `Cat` show page, make a button to approve or deny a cat request.
+-   You may add two [member](https://open.appacademy.io/learn/full-stack-online/rails/routing-iii--adding-non-default-routes) routes to `cat_rental_requests`: `approve` and `deny`.
+-   Only show these buttons if a request is pending.
+-   You may want to add a convenient `CatRentalRequest#pending?` method.

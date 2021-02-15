@@ -1,5 +1,1 @@
-<section class="page"><div class="centered-box">
-  <h1>Edit My Cat</h1>
-  <%= render 'shared/errors' %>
-  <%= render 'form', cat: @cat %>
-</div></section>
+<%= render 'form', cat: @cat, action: :edit %>

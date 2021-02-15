@@ -1,27 +1,33 @@
 class SessionsController < ApplicationController
-  before_action :require_no_user!, only: %i(create new)
-
-  def create
-    user = User.find_by_credentials(
-      params[:user][:username],
-      params[:user][:password]
-    )
-
-    if user.nil?
-      flash.now[:errors] = ["Incorrect username and/or password"]
-      render :new
-    else
-      login_user!(user)
-      redirect_to cats_url
+    before_action :already_logged_in, only: [:new, :create]
+    def new
     end
-  end
 
-  def destroy
-    logout_user!
-    redirect_to new_session_url
-  end
+    def create
+        user_name = sessions_params["user_name"]
+        password = sessions_params["password"]
+        
+        begin
+            @user = User.find_by_credentials(user_name, password)
+            @user.reset_session_token!
+            login!(@user)
+        rescue => exception
+            puts exception.message
+        end
+        redirect_to cats_url
+    end
 
-  def new
-    render :new
-  end
+    def destroy
+        current_user.reset_session_token! if current_user
+        session[:session_token] = nil
+        redirect_to cats_url
+    end
+
+    private
+    def sessions_params
+        params.require(:users).permit(
+            :user_name,
+            :password
+        )
+    end
 end
