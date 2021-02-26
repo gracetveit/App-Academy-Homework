@@ -1,4 +1,4 @@
-function isPrime(n:number) {
+export function isPrime(n:number) {
     if ([1, 2].includes(n)) {
         return true;
     } else if (n === 0){
@@ -13,9 +13,3 @@ function isPrime(n:number) {
     
     return true;
 }
-
-console.log(isPrime(2));
-console.log(isPrime(0));
-console.log(isPrime(10));
-console.log(isPrime(15485863));
-console.log(isPrime(3548563));
