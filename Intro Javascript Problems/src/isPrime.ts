@@ -1,5 +1,5 @@
 function isPrime(n:number) {
-    if (n === 1 || n === 2) {
+    if ([1, 2].includes(n)) {
         return true;
     } else if (n === 0){
         return false;
